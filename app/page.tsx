@@ -88,7 +88,7 @@ export default function Home() {
     if (!numeroPedido || numeroPedido.trim() === '') return;
 
     try {
-      const res = await fetch(`/api/chamados?pedido=${numeroPedido}`);
+      const res = await fetch(`/api/chamados?pedido=\${numeroPedido}`);
       const resultado = await res.json();
       if (resultado.success && resultado.data.length > 0) {
         setPedidoExistenteModal(resultado.data[0]);
@@ -107,7 +107,7 @@ export default function Home() {
     }
 
     setLoading(true);
-    const resolucaoPadrao = `Pedido: ${form.pedido}\nBling: ${form.bling || '-'}\nNF: ${form.nf || '-'}\n`;
+    const resolucaoPadrao = `Pedido: \${form.pedido}\nBling: ${form.bling \vert{}\vert{} '-'}\nNF:${form.nf || '-'}\n`;
 
     try {
       const res = await fetch('/api/chamados', {
@@ -194,6 +194,8 @@ export default function Home() {
         setStatusRapido('NOVO/REABERTO');
         setObsRapida('');
         carregarChamados();
+      } else {
+        alert('Erro ao salvar comentário: ' + (resultado.error || 'Erro desconhecido'));
       }
     } catch (error) {
       console.error('Erro ao adicionar observação rápida:', error);
@@ -252,9 +254,9 @@ export default function Home() {
   };
 
   const deletarChamado = async (id, pedido) => {
-    if (confirm(`Tem a certeza que deseja excluir permanentemente o chamado do pedido ${pedido}?`)) {
+    if (confirm(`Tem a certeza que deseja excluir permanentemente o chamado do pedido \${pedido}?`)) {
       try {
-        const res = await fetch(`/api/chamados?id=${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/chamados?id=\${id}`, { method: 'DELETE' });
         const resultado = await res.json();
         if (resultado.success) {
           carregarChamados();
@@ -267,7 +269,7 @@ export default function Home() {
 
   const chamadosFiltrados = chamados.filter((item) => {
     const termo = busca.toLowerCase();
-    const stringTimeline = item.timeline?.map(t => `${t.atendente} ${t.obs} ${t.data}`).join(' ').toLowerCase() || '';
+    const stringTimeline = item.timeline?.map(t => `\${t.atendente} ${t.obs}${t.data}`).join(' ').toLowerCase() || '';
     const statusItem = item.status || 'NOVO/REABERTO';
     
     return (
@@ -440,7 +442,7 @@ export default function Home() {
                     return (
                       <tr 
                         key={item._id} 
-                        className={`transition-colors align-top border-b border-gray-300 ${corLinha}`}
+                        className={`transition-colors align-top border-b border-gray-300 \${corLinha}`}
                       >
                         <td className="p-3 text-gray-800 font-medium text-xs whitespace-nowrap border-r border-gray-200/60">{item.dataCriacao || '-'}</td>
                         <td className="p-3 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200/60">{item.pedido}</td>
@@ -469,7 +471,7 @@ export default function Home() {
                             return (
                               <div 
                                 key={t._id} 
-                                className={`p-2.5 rounded border text-xs ${
+                                className={`p-2.5 rounded border text-xs \${
                                   isResolucao 
                                     ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm' 
                                     : 'bg-white/90 border-amber-200 text-gray-800 shadow-xs'
@@ -477,7 +479,7 @@ export default function Home() {
                               >
                                 <div className="flex justify-between font-bold items-center">
                                   <span className={isResolucao ? 'text-emerald-800' : 'text-amber-900'}>
-                                    {isResolucao ? '🟢 WESLEY (Resolução)' : `👤 ${t.atendente}`}
+                                    {isResolucao ? '🟢 WESLEY (Resolução)' : `👤 \${t.atendente}`}
                                   </span>
                                   <div className="flex items-center gap-2">
                                     <span className="text-gray-500 font-normal">{t.data}</span>
@@ -595,169 +597,4 @@ export default function Home() {
                           <select
                             value={statusAtual}
                             onChange={(e) => atualizarCampo(item._id, { status: e.target.value })}
-                            className={`text-xs font-bold p-1.5 rounded-lg border ${corSelect} focus:outline-none`}
-                          >
-                            <option value="NOVO/REABERTO">NOVO/REABERTO</option>
-                            <option value="EM ANÁLISE">EM ANÁLISE</option>
-                            <option value="REPASSADO">REPASSADO</option>
-                            <option value="FINALIZADO">FINALIZADO</option>
-                            <option value="RETOR. CLIEN">RETOR. CLIEN</option>
-                            <option value="AGENDADO">AGENDADO</option>
-                          </select>
-                        </td>
-
-                        {/* Resolução */}
-                        <td className="p-3 border-r border-gray-200/60">
-                          <textarea
-                            rows="4"
-                            defaultValue={item.resolucao || `Pedido: ${item.pedido}\nBling: ${item.bling || '-'}\nNF: ${item.nf || '-'}\n`}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                e.target.blur();
-                                atualizarCampo(item._id, { resolucao: e.target.value });
-                              }
-                            }}
-                            placeholder="Digite a resolução..."
-                            className="w-full border border-emerald-300 rounded p-2 text-xs text-gray-900 font-semibold bg-white/80 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y"
-                          />
-                        </td>
-
-                        {/* Excluir */}
-                        <td className="p-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => deletarChamado(item._id, item.pedido)}
-                            title="Excluir Chamado Inteiro"
-                            className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg border border-red-200 transition-colors"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Modal de Pedido Duplicado */}
-      {pedidoExistenteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-xl w-full shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center space-x-3 text-amber-600">
-              <svg className="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Pedido #{pedidoExistenteModal.pedido} Já Registado!</h3>
-                <p className="text-xs text-gray-500">Veja abaixo o histórico e gerencie este pedido:</p>
-              </div>
-            </div>
-
-            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-900 uppercase">Status Atual do Pedido:</span>
-              <select
-                value={pedidoExistenteModal.status || 'NOVO/REABERTO'}
-                onChange={(e) => atualizarCampo(pedidoExistenteModal._id, { status: e.target.value })}
-                className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[pedidoExistenteModal.status || 'NOVO/REABERTO']} focus:outline-none`}
-              >
-                <option value="NOVO/REABERTO">NOVO/REABERTO</option>
-                <option value="EM ANÁLISE">EM ANÁLISE</option>
-                <option value="REPASSADO">REPASSADO</option>
-                <option value="FINALIZADO">FINALIZADO</option>
-                <option value="RETOR. CLIEN">RETOR. CLIEN</option>
-                <option value="AGENDADO">AGENDADO</option>
-              </select>
-            </div>
-
-            <div className="bg-gray-100 p-3 rounded-lg border border-gray-200 space-y-2 max-h-40 overflow-y-auto">
-              <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">Histórico de Conversas Anteriores:</div>
-              {pedidoExistenteModal.timeline?.map((t) => {
-                const isRes = t.tipo === 'resolucao' || t.atendente === 'WESLEY';
-                return (
-                  <div key={t._id} className={`p-2 rounded border text-xs ${isRes ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-white border-gray-200 text-gray-800'}`}>
-                    <div className="flex justify-between font-bold">
-                      <span className={isRes ? 'text-emerald-800' : 'text-amber-900'}>
-                        {isRes ? '🟢 WESLEY (Resolução)' : `👤 ${t.atendente}`}
-                      </span>
-                      <span className="text-gray-500 font-normal">{t.data}</span>
-                    </div>
-                    <div className="mt-1 font-medium whitespace-pre-wrap">{t.obs}</div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {modoAtualizacao && (
-              <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div className="text-xs font-bold text-gray-700 uppercase">Adicionar Nova Atualização / Contato:</div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">O SEU NOME (ATENDENTE) *</label>
-                  <select
-                    value={atendenteAtualizador}
-                    onChange={(e) => setAtendenteAtualizador(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  >
-                    <option value="">Selecione quem está a atender agora</option>
-                    {ATENDENTES.map((atendente) => (
-                      <option key={atendente} value={atendente}>{atendente}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">NOVO STATUS DO PEDIDO *</label>
-                  <select
-                    value={statusAtualizador}
-                    onChange={(e) => setStatusAtualizador(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-bold bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  >
-                    <option value="NOVO/REABERTO">NOVO/REABERTO</option>
-                    <option value="EM ANÁLISE">EM ANÁLISE</option>
-                    <option value="REPASSADO">REPASSADO</option>
-                    <option value="FINALIZADO">FINALIZADO</option>
-                    <option value="RETOR. CLIEN">RETOR. CLIEN</option>
-                    <option value="AGENDADO">AGENDADO</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">NOVA OBSERVAÇÃO / SOLICITAÇÃO DO CLIENTE *</label>
-                  <textarea
-                    rows="3"
-                    value={novaObservacao}
-                    onChange={(e) => setNovaObservacao(e.target.value)}
-                    placeholder="Descreva o novo contato..."
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => { setPedidoExistenteModal(null); setModoAtualizacao(false); setForm({ ...form, pedido: '' }); }}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Fechar / Limpar Pedido
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAtualizarExistente}
-                    className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Adicionar à Timeline
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
+                            className={`text-xs font-bold p-1
