@@ -16,8 +16,8 @@ const ChamadoSchema = new mongoose.Schema({
   dataCriacao: { type: String, required: true },
   status: { 
     type: String, 
-    enum: ['', 'EM ANÁLISE', 'REPASSADO', 'FINALIZADO', 'RETOR. CLIEN', 'AGENDADO'],
-    default: '' // Inicia sem status em branco
+    enum: ['', 'NOVO/REABERTO', 'EM ANÁLISE', 'REPASSADO', 'FINALIZADO', 'RETOR. CLIEN', 'AGENDADO'],
+    default: 'NOVO/REABERTO' 
   },
   resolucao: { type: String, default: '' },
   timeline: [TimelineSchema],
