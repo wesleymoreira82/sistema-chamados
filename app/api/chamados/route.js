@@ -15,10 +15,14 @@ export async function GET(request) {
 
     const chamados = await Chamado.find({});
     
+    // Regra de prioridade:
+    // 1. EM ANÁLISE no topo
+    // 2. NOVO/REABERTO em segundo
+    // 3. Demais status por último
     chamados.sort((a, b) => {
       const getPesoStatus = (status) => {
         if (status === 'EM ANÁLISE') return 1;
-        if (!status || status === '') return 2;
+        if (!status || status === '' || status === 'NOVO/REABERTO') return 2;
         return 3;
       };
 
@@ -64,7 +68,7 @@ export async function POST(request) {
       ticket,
       atendenteCriacao: atendente,
       dataCriacao: dataAtual,
-      status: '',
+      status: 'NOVO/REABERTO', // Padrão agora é NOVO/REABERTO
       resolucao: resolucaoPadrao,
       timeline: [{ data: dataAtual, atendente, obs, tipo: 'normal' }]
     });
@@ -114,7 +118,6 @@ export async function PUT(request) {
       }
     }
 
-    // Se o status foi enviado na atualização rápida, atualiza ele também
     if (status !== undefined) chamado.status = status;
     if (nf !== undefined) chamado.nf = nf;
     if (bling !== undefined) chamado.bling = bling;
