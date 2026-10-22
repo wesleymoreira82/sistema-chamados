@@ -22,6 +22,7 @@ const ATENDENTES = [
 
 const LINHA_STATUS_CORES = {
   '': 'bg-white hover:bg-gray-50',
+  'NOVO/REABERTO': 'bg-white hover:bg-gray-50',
   'EM ANÁLISE': 'bg-yellow-50/70 hover:bg-yellow-100/70',
   'REPASSADO': 'bg-blue-50/70 hover:bg-blue-100/70',
   'FINALIZADO': 'bg-green-50/70 hover:bg-green-100/70',
@@ -30,7 +31,8 @@ const LINHA_STATUS_CORES = {
 };
 
 const STATUS_CORES = {
-  '': 'bg-gray-100 text-gray-500 border-gray-300',
+  '': 'bg-gray-100 text-gray-700 border-gray-300 font-bold',
+  'NOVO/REABERTO': 'bg-gray-100 text-gray-700 border-gray-300 font-bold',
   'EM ANÁLISE': 'bg-yellow-100 text-yellow-800 border-yellow-300',
   'REPASSADO': 'bg-blue-100 text-blue-800 border-blue-300',
   'FINALIZADO': 'bg-green-100 text-green-800 border-green-300',
@@ -50,22 +52,22 @@ export default function Home() {
     pedido: '',
     atendente: '',
     obs: '',
-    status: '',
+    status: 'NOVO/REABERTO',
     resolucao: ''
   });
 
   const [pedidoExistenteModal, setPedidoExistenteModal] = useState(null);
   const [modoAtualizacao, setModoAtualizacao] = useState(false);
   const [atendenteAtualizador, setAtendenteAtualizador] = useState('');
+  const [statusAtualizador, setStatusAtualizador] = useState('NOVO/REABERTO');
   const [novaObservacao, setNovaObservacao] = useState('');
 
   const [editandoTimelineId, setEditandoTimelineId] = useState(null);
   const [textoEditado, setTextoEditado] = useState('');
 
-  // Estados para a adição rápida com status obrigatório
   const [adicionandoEmId, setAdicionandoEmId] = useState(null);
   const [atendenteRapido, setAtendenteRapido] = useState('');
-  const [statusRapido, setStatusRapido] = useState('');
+  const [statusRapido, setStatusRapido] = useState('NOVO/REABERTO');
   const [obsRapida, setObsRapida] = useState('');
 
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function Home() {
       const resultado = await res.json();
 
       if (resultado.success) {
-        setForm({ nf: '', bling: '', ticket: '', pedido: '', atendente: '', obs: '', status: '', resolucao: '' });
+        setForm({ nf: '', bling: '', ticket: '', pedido: '', atendente: '', obs: '', status: 'NOVO/REABERTO', resolucao: '' });
         carregarChamados();
         alert('Chamado registrado com sucesso!');
       } else if (resultado.duplicado) {
@@ -148,7 +150,8 @@ export default function Home() {
         body: JSON.stringify({
           id: pedidoExistenteModal._id,
           novaObs: novaObservacao,
-          atendenteAtualizacao: atendenteAtualizador
+          atendenteAtualizacao: atendenteAtualizador,
+          status: statusAtualizador
         })
       });
 
@@ -159,7 +162,8 @@ export default function Home() {
         setModoAtualizacao(false);
         setNovaObservacao('');
         setAtendenteAtualizador('');
-        setForm({ nf: '', bling: '', ticket: '', pedido: '', atendente: '', obs: '', status: '', resolucao: '' });
+        setStatusAtualizador('NOVO/REABERTO');
+        setForm({ nf: '', bling: '', ticket: '', pedido: '', atendente: '', obs: '', status: 'NOVO/REABERTO', resolucao: '' });
         carregarChamados();
       }
     } catch (error) {
@@ -167,7 +171,6 @@ export default function Home() {
     }
   };
 
-  // Salvar adição rápida com status obrigatório
   const salvarAdicaoRapida = async (id) => {
     if (!atendenteRapido || !statusRapido || !obsRapida.trim()) {
       alert('Preencha o Atendente, selecione um Status obrigatório e digite a observação!');
@@ -190,7 +193,7 @@ export default function Home() {
       if (resultado.success) {
         setAdicionandoEmId(null);
         setAtendenteRapido('');
-        setStatusRapido('');
+        setStatusRapido('NOVO/REABERTO');
         setObsRapida('');
         carregarChamados();
       }
@@ -278,7 +281,7 @@ export default function Home() {
       item.bling?.toLowerCase().includes(termo) ||
       item.ticket?.toLowerCase().includes(termo) ||
       item.atendenteCriacao?.toLowerCase().includes(termo) ||
-      (item.status || '').toLowerCase().includes(termo) ||
+      (item.status || 'NOVO/REABERTO').toLowerCase().includes(termo) ||
       item.resolucao?.toLowerCase().includes(termo) ||
       stringTimeline.includes(termo)
     );
@@ -404,7 +407,7 @@ export default function Home() {
         {/* Tabela de Chamados */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <h2 className="font-semibold text-gray-700">Histórico de Chamados (Prioridade: Em Análise &gt; Nenhum Status)</h2>
+            <h2 className="font-semibold text-gray-700">Histórico de Chamados (Prioridade: Em Análise &gt; NOVO/REABERTO)</h2>
             <span className="text-xs text-gray-500">Ordenado por status prioritário e antiguidade</span>
           </div>
 
@@ -434,205 +437,208 @@ export default function Home() {
                     <td colSpan="10" className="text-center p-6 text-gray-400">Nenhum chamado encontrado.</td>
                   </tr>
                 ) : (
-                  chamadosFiltrados.map((item) => (
-                    <tr 
-                      key={item._id} 
-                      className={`transition-colors align-top border-b border-gray-300 ${LINHA_STATUS_CORES[item.status] || LINHA_STATUS_CORES['']}`}
-                    >
-                      <td className="p-3 text-gray-800 font-medium text-xs whitespace-nowrap border-r border-gray-200/60">{item.dataCriacao || '-'}</td>
-                      <td className="p-3 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200/60">{item.pedido}</td>
-                      <td className="p-3 text-gray-700 border-r border-gray-200/60">{item.nf || '-'}</td>
-                      <td className="p-3 text-gray-700 truncate max-w-xs border-r border-gray-200/60">{item.bling || '-'}</td>
-                      <td className="p-3 text-gray-700 border-r border-gray-200/60">{item.ticket || '-'}</td>
-                      <td className="p-3 font-medium text-gray-800 border-r border-gray-200/60">{item.atendenteCriacao}</td>
-                      
-                      {/* Timeline com Botão "+" Rápido */}
-                      <td className="p-3 space-y-2 max-w-md border-r border-gray-200/60 relative">
-                        <div className="flex justify-end mb-1">
-                          <button
-                            type="button"
-                            onClick={() => { setAdicionandoEmId(item._id); setAtendenteRapido(''); setStatusRapido(item.status || ''); setObsRapida(''); }}
-                            title="Adicionar nova observação rapidamente"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
-                          >
-                            + Novo Comentário
-                          </button>
-                        </div>
-
-                        {item.timeline?.map((t) => {
-                          const isResolucao = t.tipo === 'resolucao' || t.atendente === 'WESLEY';
-                          const isEditando = editandoTimelineId === t._id;
-
-                          return (
-                            <div 
-                              key={t._id} 
-                              className={`p-2.5 rounded border text-xs ${
-                                isResolucao 
-                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm' 
-                                  : 'bg-white/90 border-amber-200 text-gray-800 shadow-xs'
-                              }`}
+                  chamadosFiltrados.map((item) => {
+                    const statusAtual = item.status || 'NOVO/REABERTO';
+                    return (
+                      <tr 
+                        key={item._id} 
+                        className={`transition-colors align-top border-b border-gray-300 ${LINHA_STATUS_CORES[statusAtual] || LINHA_STATUS_CORES['NOVO/REABERTO']}`}
+                      >
+                        <td className="p-3 text-gray-800 font-medium text-xs whitespace-nowrap border-r border-gray-200/60">{item.dataCriacao || '-'}</td>
+                        <td className="p-3 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200/60">{item.pedido}</td>
+                        <td className="p-3 text-gray-700 border-r border-gray-200/60">{item.nf || '-'}</td>
+                        <td className="p-3 text-gray-700 truncate max-w-xs border-r border-gray-200/60">{item.bling || '-'}</td>
+                        <td className="p-3 text-gray-700 border-r border-gray-200/60">{item.ticket || '-'}</td>
+                        <td className="p-3 font-medium text-gray-800 border-r border-gray-200/60">{item.atendenteCriacao}</td>
+                        
+                        {/* Timeline */}
+                        <td className="p-3 space-y-2 max-w-md border-r border-gray-200/60 relative">
+                          <div className="flex justify-end mb-1">
+                            <button
+                              type="button"
+                              onClick={() => { setAdicionandoEmId(item._id); setAtendenteRapido(''); setStatusRapido(statusAtual); setObsRapida(''); }}
+                              title="Adicionar nova observação rapidamente"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
                             >
-                              <div className="flex justify-between font-bold items-center">
-                                <span className={isResolucao ? 'text-emerald-800' : 'text-amber-900'}>
-                                  {isResolucao ? '🟢 WESLEY (Resolução)' : `👤 ${t.atendente}`}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-500 font-normal">{t.data}</span>
-                                  {!isEditando && (
-                                    <>
-                                      <button 
-                                        onClick={() => { setEditandoTimelineId(t._id); setTextoEditado(t.obs); }}
-                                        title="Editar observação"
-                                        className="text-gray-500 hover:text-blue-600 text-xs"
-                                      >
-                                        ✏️
-                                      </button>
-                                      <button 
-                                        onClick={() => deletarItemTimeline(item._id, t._id)}
-                                        title="Excluir observação"
-                                        className="text-gray-500 hover:text-red-600 text-xs"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                              + Novo Comentário
+                            </button>
+                          </div>
 
-                              {isEditando ? (
-                                <div className="mt-2 space-y-2">
-                                  <textarea
-                                    rows="2"
-                                    value={textoEditado}
-                                    onChange={(e) => setTextoEditado(e.target.value)}
-                                    className="w-full p-1.5 border rounded text-xs bg-white text-gray-900"
-                                  />
-                                  <div className="flex justify-end gap-1">
-                                    <button 
-                                      onClick={() => setEditandoTimelineId(null)}
-                                      className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-[10px]"
-                                    >
-                                      Cancelar
-                                    </button>
-                                    <button 
-                                      onClick={() => salvarEdicaoTimeline(item._id, t._id)}
-                                      className="px-2 py-1 bg-blue-600 text-white rounded text-[10px]"
-                                    >
-                                      Salvar
-                                    </button>
+                          {item.timeline?.map((t) => {
+                            const isResolucao = t.tipo === 'resolucao' || t.atendente === 'WESLEY';
+                            const isEditando = editandoTimelineId === t._id;
+
+                            return (
+                              <div 
+                                key={t._id} 
+                                className={`p-2.5 rounded border text-xs ${
+                                  isResolucao 
+                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm' 
+                                    : 'bg-white/90 border-amber-200 text-gray-800 shadow-xs'
+                                }`}
+                              >
+                                <div className="flex justify-between font-bold items-center">
+                                  <span className={isResolucao ? 'text-emerald-800' : 'text-amber-900'}>
+                                    {isResolucao ? '🟢 WESLEY (Resolução)' : `👤 ${t.atendente}`}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-gray-500 font-normal">{t.data}</span>
+                                    {!isEditando && (
+                                      <>
+                                        <button 
+                                          onClick={() => { setEditandoTimelineId(t._id); setTextoEditado(t.obs); }}
+                                          title="Editar observação"
+                                          className="text-gray-500 hover:text-blue-600 text-xs"
+                                        >
+                                          ✏️
+                                        </button>
+                                        <button 
+                                          onClick={() => deletarItemTimeline(item._id, t._id)}
+                                          title="Excluir observação"
+                                          className="text-gray-500 hover:text-red-600 text-xs"
+                                        >
+                                          🗑️
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
-                              ) : (
-                                <div className="mt-1 font-medium whitespace-pre-wrap">{t.obs}</div>
-                              )}
-                            </div>
-                          );
-                        })}
 
-                        {/* Caixa de Adição Rápida com Status Obrigatório */}
-                        {adicionandoEmId === item._id && (
-                          <div className="bg-emerald-50 border-2 border-emerald-400 p-3 rounded-lg shadow-md space-y-2 mt-2">
-                            <div className="text-xs font-bold text-emerald-900 uppercase">Novo Comentário na Timeline:</div>
-                            
-                            <select
-                              value={atendenteRapido}
-                              onChange={(e) => setAtendenteRapido(e.target.value)}
-                              className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 font-medium focus:outline-none"
-                            >
-                              <option value="">Selecione o Atendente *</option>
-                              {ATENDENTES.map((atendente) => (
-                                <option key={atendente} value={atendente}>{atendente}</option>
-                              ))}
-                            </select>
+                                {isEditando ? (
+                                  <div className="mt-2 space-y-2">
+                                    <textarea
+                                      rows="2"
+                                      value={textoEditado}
+                                      onChange={(e) => setTextoEditado(e.target.value)}
+                                      className="w-full p-1.5 border rounded text-xs bg-white text-gray-900"
+                                    />
+                                    <div className="flex justify-end gap-1">
+                                      <button 
+                                        onClick={() => setEditandoTimelineId(null)}
+                                        className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-[10px]"
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button 
+                                        onClick={() => salvarEdicaoTimeline(item._id, t._id)}
+                                        className="px-2 py-1 bg-blue-600 text-white rounded text-[10px]"
+                                      >
+                                        Salvar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-1 font-medium whitespace-pre-wrap">{t.obs}</div>
+                                )}
+                              </div>
+                            );
+                          })}
 
-                            <select
-                              required
-                              value={statusRapido}
-                              onChange={(e) => setStatusRapido(e.target.value)}
-                              className="w-full border border-emerald-300 rounded p-1.5 text-xs bg-white text-gray-900 font-bold focus:outline-none"
-                            >
-                              <option value="">Selecione o Status Obrigatório *</option>
-                              <option value="EM ANÁLISE">EM ANÁLISE</option>
-                              <option value="REPASSADO">REPASSADO</option>
-                              <option value="FINALIZADO">FINALIZADO</option>
-                              <option value="RETOR. CLIEN">RETOR. CLIEN</option>
-                              <option value="AGENDADO">AGENDADO</option>
-                            </select>
-
-                            <textarea
-                              rows="2"
-                              value={obsRapida}
-                              onChange={(e) => setObsRapida(e.target.value)}
-                              placeholder="Digite a nova observação..."
-                              className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 focus:outline-none resize-y"
-                            />
-
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setAdicionandoEmId(null)}
-                                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-medium"
+                          {/* Caixa de Adição Rápida */}
+                          {adicionandoEmId === item._id && (
+                            <div className="bg-emerald-50 border-2 border-emerald-400 p-3 rounded-lg shadow-md space-y-2 mt-2">
+                              <div className="text-xs font-bold text-emerald-900 uppercase">Novo Comentário na Timeline:</div>
+                              
+                              <select
+                                value={atendenteRapido}
+                                onChange={(e) => setAtendenteRapido(e.target.value)}
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 font-medium focus:outline-none"
                               >
-                                Cancelar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => salvarAdicaoRapida(item._id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-medium"
+                                <option value="">Selecione o Atendente *</option>
+                                {ATENDENTES.map((atendente) => (
+                                  <option key={atendente} value={atendente}>{atendente}</option>
+                                ))}
+                              </select>
+
+                              <select
+                                required
+                                value={statusRapido}
+                                onChange={(e) => setStatusRapido(e.target.value)}
+                                className="w-full border border-emerald-300 rounded p-1.5 text-xs bg-white text-gray-900 font-bold focus:outline-none"
                               >
-                                Salvar Comentário
-                              </button>
+                                <option value="NOVO/REABERTO">NOVO/REABERTO</option>
+                                <option value="EM ANÁLISE">EM ANÁLISE</option>
+                                <option value="REPASSADO">REPASSADO</option>
+                                <option value="FINALIZADO">FINALIZADO</option>
+                                <option value="RETOR. CLIEN">RETOR. CLIEN</option>
+                                <option value="AGENDADO">AGENDADO</option>
+                              </select>
+
+                              <textarea
+                                rows="2"
+                                value={obsRapida}
+                                onChange={(e) => setObsRapida(e.target.value)}
+                                placeholder="Digite a nova observação..."
+                                className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 focus:outline-none resize-y"
+                              />
+
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setAdicionandoEmId(null)}
+                                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-medium"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => salvarAdicaoRapida(item._id)}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-medium"
+                                >
+                                  Salvar Comentário
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </td>
-                      
-                      {/* Status */}
-                      <td className="p-3 border-r border-gray-200/60">
-                        <select
-                          value={item.status || ''}
-                          onChange={(e) => atualizarCampo(item._id, { status: e.target.value })}
-                          className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[item.status] || STATUS_CORES['']} focus:outline-none`}
-                        >
-                          <option value="">(Nenhum Status)</option>
-                          <option value="EM ANÁLISE">EM ANÁLISE</option>
-                          <option value="REPASSADO">REPASSADO</option>
-                          <option value="FINALIZADO">FINALIZADO</option>
-                          <option value="RETOR. CLIEN">RETOR. CLIEN</option>
-                          <option value="AGENDADO">AGENDADO</option>
-                        </select>
-                      </td>
+                          )}
+                        </td>
+                        
+                        {/* Status */}
+                        <td className="p-3 border-r border-gray-200/60">
+                          <select
+                            value={statusAtual}
+                            onChange={(e) => atualizarCampo(item._id, { status: e.target.value })}
+                            className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[statusAtual] || STATUS_CORES['NOVO/REABERTO']} focus:outline-none`}
+                          >
+                            <option value="NOVO/REABERTO">NOVO/REABERTO</option>
+                            <option value="EM ANÁLISE">EM ANÁLISE</option>
+                            <option value="REPASSADO">REPASSADO</option>
+                            <option value="FINALIZADO">FINALIZADO</option>
+                            <option value="RETOR. CLIEN">RETOR. CLIEN</option>
+                            <option value="AGENDADO">AGENDADO</option>
+                          </select>
+                        </td>
 
-                      {/* Resolução */}
-                      <td className="p-3 border-r border-gray-200/60">
-                        <textarea
-                          rows="4"
-                          defaultValue={item.resolucao || `Pedido: ${item.pedido}\nBling: ${item.bling || '-'}\nNF: ${item.nf || '-'}\n`}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              e.target.blur();
-                              atualizarCampo(item._id, { resolucao: e.target.value });
-                            }
-                          }}
-                          placeholder="Digite a resolução..."
-                          className="w-full border border-emerald-300 rounded p-2 text-xs text-gray-900 font-semibold bg-white/80 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y"
-                        />
-                      </td>
+                        {/* Resolução */}
+                        <td className="p-3 border-r border-gray-200/60">
+                          <textarea
+                            rows="4"
+                            defaultValue={item.resolucao || `Pedido: ${item.pedido}\nBling: ${item.bling || '-'}\nNF: ${item.nf || '-'}\n`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                e.target.blur();
+                                atualizarCampo(item._id, { resolucao: e.target.value });
+                              }
+                            }}
+                            placeholder="Digite a resolução..."
+                            className="w-full border border-emerald-300 rounded p-2 text-xs text-gray-900 font-semibold bg-white/80 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y"
+                          />
+                        </td>
 
-                      {/* Excluir Chamado */}
-                      <td className="p-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => deletarChamado(item._id, item.pedido)}
-                          title="Excluir Chamado Inteiro"
-                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg border border-red-200 transition-colors"
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        {/* Excluir */}
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => deletarChamado(item._id, item.pedido)}
+                            title="Excluir Chamado Inteiro"
+                            className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg border border-red-200 transition-colors"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -658,11 +664,11 @@ export default function Home() {
             <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
               <span className="text-xs font-bold text-amber-900 uppercase">Status Atual do Pedido:</span>
               <select
-                value={pedidoExistenteModal.status || ''}
+                value={pedidoExistenteModal.status || 'NOVO/REABERTO'}
                 onChange={(e) => atualizarCampo(pedidoExistenteModal._id, { status: e.target.value })}
-                className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[pedidoExistenteModal.status] || STATUS_CORES['']} focus:outline-none`}
+                className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[pedidoExistenteModal.status || 'NOVO/REABERTO']} focus:outline-none`}
               >
-                <option value="">(Nenhum Status)</option>
+                <option value="NOVO/REABERTO">NOVO/REABERTO</option>
                 <option value="EM ANÁLISE">EM ANÁLISE</option>
                 <option value="REPASSADO">REPASSADO</option>
                 <option value="FINALIZADO">FINALIZADO</option>
@@ -703,6 +709,22 @@ export default function Home() {
                     {ATENDENTES.map((atendente) => (
                       <option key={atendente} value={atendente}>{atendente}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">NOVO STATUS DO PEDIDO *</label>
+                  <select
+                    value={statusAtualizador}
+                    onChange={(e) => setStatusAtualizador(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-bold bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  >
+                    <option value="NOVO/REABERTO">NOVO/REABERTO</option>
+                    <option value="EM ANÁLISE">EM ANÁLISE</option>
+                    <option value="REPASSADO">REPASSADO</option>
+                    <option value="FINALIZADO">FINALIZADO</option>
+                    <option value="RETOR. CLIEN">RETOR. CLIEN</option>
+                    <option value="AGENDADO">AGENDADO</option>
                   </select>
                 </div>
 
