@@ -170,8 +170,8 @@ export default function Home() {
   };
 
   const salvarAdicaoRapida = async (id) => {
-    if (!atendenteRapido || !statusRapido || !obsRapida.trim()) {
-      alert('Preencha o Atendente, selecione um Status obrigatório e digite a observação!');
+    if (!atendenteRapido || !obsRapida.trim()) {
+      alert('Preencha o Atendente e digite a observação!');
       return;
     }
 
@@ -183,7 +183,7 @@ export default function Home() {
           id: id,
           novaObs: obsRapida,
           atendenteAtualizacao: atendenteRapido,
-          status: statusRapido
+          status: statusRapido || 'NOVO/REABERTO'
         })
       });
 
@@ -201,7 +201,6 @@ export default function Home() {
   };
 
   const atualizarCampo = async (id, dados) => {
-    // Atualiza imediatamente na tela (otimista) para refletir o status NOVO/REABERTO na hora
     setChamados(prev => prev.map(item => item._id === id ? { ...item, ...dados } : item));
 
     try {
@@ -212,11 +211,11 @@ export default function Home() {
       });
       const resultado = await res.json();
       if (resultado.success) {
-        carregarChamados(); // Recarrega para ordenar corretamente se necessário
+        carregarChamados();
       }
     } catch (error) {
       console.error('Erro ao atualizar campo:', error);
-      carregarChamados(); // Reverte se houver erro
+      carregarChamados();
     }
   };
 
