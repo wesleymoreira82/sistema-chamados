@@ -62,9 +62,10 @@ export default function Home() {
   const [editandoTimelineId, setEditandoTimelineId] = useState(null);
   const [textoEditado, setTextoEditado] = useState('');
 
-  // Estados para a adição rápida via botão "+" na timeline
+  // Estados para a adição rápida com status obrigatório
   const [adicionandoEmId, setAdicionandoEmId] = useState(null);
   const [atendenteRapido, setAtendenteRapido] = useState('');
+  const [statusRapido, setStatusRapido] = useState('');
   const [obsRapida, setObsRapida] = useState('');
 
   useEffect(() => {
@@ -166,10 +167,10 @@ export default function Home() {
     }
   };
 
-  // Função para salvar a adição rápida pelo botão "+" da linha
+  // Salvar adição rápida com status obrigatório
   const salvarAdicaoRapida = async (id) => {
-    if (!atendenteRapido || !obsRapida.trim()) {
-      alert('Selecione o atendente e digite a observação!');
+    if (!atendenteRapido || !statusRapido || !obsRapida.trim()) {
+      alert('Preencha o Atendente, selecione um Status obrigatório e digite a observação!');
       return;
     }
 
@@ -180,7 +181,8 @@ export default function Home() {
         body: JSON.stringify({
           id: id,
           novaObs: obsRapida,
-          atendenteAtualizacao: atendenteRapido
+          atendenteAtualizacao: atendenteRapido,
+          status: statusRapido
         })
       });
 
@@ -188,6 +190,7 @@ export default function Home() {
       if (resultado.success) {
         setAdicionandoEmId(null);
         setAtendenteRapido('');
+        setStatusRapido('');
         setObsRapida('');
         carregarChamados();
       }
@@ -448,7 +451,7 @@ export default function Home() {
                         <div className="flex justify-end mb-1">
                           <button
                             type="button"
-                            onClick={() => { setAdicionandoEmId(item._id); setAtendenteRapido(''); setObsRapida(''); }}
+                            onClick={() => { setAdicionandoEmId(item._id); setAtendenteRapido(''); setStatusRapido(item.status || ''); setObsRapida(''); }}
                             title="Adicionar nova observação rapidamente"
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
                           >
@@ -526,10 +529,11 @@ export default function Home() {
                           );
                         })}
 
-                        {/* Caixa de Adição Rápida (quando clica no botão "+") */}
+                        {/* Caixa de Adição Rápida com Status Obrigatório */}
                         {adicionandoEmId === item._id && (
                           <div className="bg-emerald-50 border-2 border-emerald-400 p-3 rounded-lg shadow-md space-y-2 mt-2">
                             <div className="text-xs font-bold text-emerald-900 uppercase">Novo Comentário na Timeline:</div>
+                            
                             <select
                               value={atendenteRapido}
                               onChange={(e) => setAtendenteRapido(e.target.value)}
@@ -540,6 +544,21 @@ export default function Home() {
                                 <option key={atendente} value={atendente}>{atendente}</option>
                               ))}
                             </select>
+
+                            <select
+                              required
+                              value={statusRapido}
+                              onChange={(e) => setStatusRapido(e.target.value)}
+                              className="w-full border border-emerald-300 rounded p-1.5 text-xs bg-white text-gray-900 font-bold focus:outline-none"
+                            >
+                              <option value="">Selecione o Status Obrigatório *</option>
+                              <option value="EM ANÁLISE">EM ANÁLISE</option>
+                              <option value="REPASSADO">REPASSADO</option>
+                              <option value="FINALIZADO">FINALIZADO</option>
+                              <option value="RETOR. CLIEN">RETOR. CLIEN</option>
+                              <option value="AGENDADO">AGENDADO</option>
+                            </select>
+
                             <textarea
                               rows="2"
                               value={obsRapida}
@@ -547,6 +566,7 @@ export default function Home() {
                               placeholder="Digite a nova observação..."
                               className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 focus:outline-none resize-y"
                             />
+
                             <div className="flex justify-end gap-2">
                               <button
                                 type="button"
