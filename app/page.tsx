@@ -201,6 +201,9 @@ export default function Home() {
   };
 
   const atualizarCampo = async (id, dados) => {
+    // Atualiza imediatamente na tela (otimista) para refletir o status NOVO/REABERTO na hora
+    setChamados(prev => prev.map(item => item._id === id ? { ...item, ...dados } : item));
+
     try {
       const res = await fetch('/api/chamados', {
         method: 'PUT',
@@ -209,17 +212,11 @@ export default function Home() {
       });
       const resultado = await res.json();
       if (resultado.success) {
-        if (pedidoExistenteModal && pedidoExistenteModal._id === id) {
-          const resAtualizado = await fetch(`/api/chamados?pedido=${pedidoExistenteModal.pedido}`);
-          const resJson = await resAtualizado.json();
-          if (resJson.success && resJson.data.length > 0) {
-            setPedidoExistenteModal(resJson.data[0]);
-          }
-        }
-        carregarChamados();
+        carregarChamados(); // Recarrega para ordenar corretamente se necessário
       }
     } catch (error) {
       console.error('Erro ao atualizar campo:', error);
+      carregarChamados(); // Reverte se houver erro
     }
   };
 
