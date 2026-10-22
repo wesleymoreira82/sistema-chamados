@@ -15,14 +15,12 @@ export async function GET(request) {
 
     const chamados = await Chamado.find({});
     
-    // Regra de prioridade:
-    // 1. EM ANÁLISE no topo
-    // 2. NOVO/REABERTO em segundo
-    // 3. Demais status por último
+    // Regra de prioridade rigorosa
     chamados.sort((a, b) => {
       const getPesoStatus = (status) => {
-        if (status === 'EM ANÁLISE') return 1;
-        if (!status || status === '' || status === 'NOVO/REABERTO') return 2;
+        const s = status || 'NOVO/REABERTO';
+        if (s === 'EM ANÁLISE') return 1;
+        if (s === 'NOVO/REABERTO') return 2;
         return 3;
       };
 
@@ -53,7 +51,7 @@ export async function POST(request) {
       return NextResponse.json({ 
         success: false, 
         duplicado: true, 
-        message: 'Pedido já cadastrado!', 
+        message: 'Pedido já registado!', 
         data: existente 
       }, { status: 400 });
     }
@@ -68,7 +66,7 @@ export async function POST(request) {
       ticket,
       atendenteCriacao: atendente,
       dataCriacao: dataAtual,
-      status: 'NOVO/REABERTO', // Padrão agora é NOVO/REABERTO
+      status: 'NOVO/REABERTO', // Força explicitamente a string
       resolucao: resolucaoPadrao,
       timeline: [{ data: dataAtual, atendente, obs, tipo: 'normal' }]
     });
@@ -118,7 +116,11 @@ export async function PUT(request) {
       }
     }
 
-    if (status !== undefined) chamado.status = status;
+    // Se o status vier vazio ou null, converte explicitamente para NOVO/REABERTO
+    if (status !== undefined) {
+      chamado.status = (!status || status === '') ? 'NOVO/REABERTO' : status;
+    }
+    
     if (nf !== undefined) chamado.nf = nf;
     if (bling !== undefined) chamado.bling = bling;
     if (ticket !== undefined) chamado.ticket = ticket;
