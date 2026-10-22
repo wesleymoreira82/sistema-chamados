@@ -8,12 +8,14 @@ const ATENDENTES = [
   'CARLA',
   'GRAZIELA',
   'ROUSY',
+  'ROUSY-FONE',
   'ROSANGELA',
   'EMILY',
   'VLADINA',
   'WENDERSON',
   'PORTARIA',
   'IRMAS',
+  'QUÉSIA',
   'RECLAME AQUI',
   'INSTAGRAM'
 ];
@@ -59,6 +61,11 @@ export default function Home() {
 
   const [editandoTimelineId, setEditandoTimelineId] = useState(null);
   const [textoEditado, setTextoEditado] = useState('');
+
+  // Estados para a adição rápida via botão "+" na timeline
+  const [adicionandoEmId, setAdicionandoEmId] = useState(null);
+  const [atendenteRapido, setAtendenteRapido] = useState('');
+  const [obsRapida, setObsRapida] = useState('');
 
   useEffect(() => {
     carregarChamados();
@@ -156,6 +163,36 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Erro ao atualizar:', error);
+    }
+  };
+
+  // Função para salvar a adição rápida pelo botão "+" da linha
+  const salvarAdicaoRapida = async (id) => {
+    if (!atendenteRapido || !obsRapida.trim()) {
+      alert('Selecione o atendente e digite a observação!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/chamados', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: id,
+          novaObs: obsRapida,
+          atendenteAtualizacao: atendenteRapido
+        })
+      });
+
+      const resultado = await res.json();
+      if (resultado.success) {
+        setAdicionandoEmId(null);
+        setAtendenteRapido('');
+        setObsRapida('');
+        carregarChamados();
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar observação rápida:', error);
     }
   };
 
@@ -361,7 +398,7 @@ export default function Home() {
           </form>
         </div>
 
-        {/* Tabela de Chamados com Nova Ordem de Prioridade */}
+        {/* Tabela de Chamados */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
             <h2 className="font-semibold text-gray-700">Histórico de Chamados (Prioridade: Em Análise &gt; Nenhum Status)</h2>
@@ -378,7 +415,11 @@ export default function Home() {
                   <th className="p-3 border-b border-amber-950">Bling</th>
                   <th className="p-3 border-b border-amber-950">Ticket</th>
                   <th className="p-3 border-b border-amber-950">Atendente (Criador)</th>
-                  <th className="p-3 border-b border-amber-950">Histórico / Timeline de Observações</th>
+                  <th className="p-3 border-b border-amber-950">
+                    <div className="flex justify-between items-center">
+                      <span>Histórico / Timeline de Observações</span>
+                    </div>
+                  </th>
                   <th className="p-3 border-b border-amber-950">Status</th>
                   <th className="p-3 border-b border-amber-950">Resolução (Wesley)</th>
                   <th className="p-3 border-b border-amber-950 text-center">Ações</th>
@@ -402,8 +443,19 @@ export default function Home() {
                       <td className="p-3 text-gray-700 border-r border-gray-200/60">{item.ticket || '-'}</td>
                       <td className="p-3 font-medium text-gray-800 border-r border-gray-200/60">{item.atendenteCriacao}</td>
                       
-                      {/* Timeline */}
-                      <td className="p-3 space-y-2 max-w-md border-r border-gray-200/60">
+                      {/* Timeline com Botão "+" Rápido */}
+                      <td className="p-3 space-y-2 max-w-md border-r border-gray-200/60 relative">
+                        <div className="flex justify-end mb-1">
+                          <button
+                            type="button"
+                            onClick={() => { setAdicionandoEmId(item._id); setAtendenteRapido(''); setObsRapida(''); }}
+                            title="Adicionar nova observação rapidamente"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
+                          >
+                            + Novo Comentário
+                          </button>
+                        </div>
+
                         {item.timeline?.map((t) => {
                           const isResolucao = t.tipo === 'resolucao' || t.atendente === 'WESLEY';
                           const isEditando = editandoTimelineId === t._id;
@@ -473,6 +525,46 @@ export default function Home() {
                             </div>
                           );
                         })}
+
+                        {/* Caixa de Adição Rápida (quando clica no botão "+") */}
+                        {adicionandoEmId === item._id && (
+                          <div className="bg-emerald-50 border-2 border-emerald-400 p-3 rounded-lg shadow-md space-y-2 mt-2">
+                            <div className="text-xs font-bold text-emerald-900 uppercase">Novo Comentário na Timeline:</div>
+                            <select
+                              value={atendenteRapido}
+                              onChange={(e) => setAtendenteRapido(e.target.value)}
+                              className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 font-medium focus:outline-none"
+                            >
+                              <option value="">Selecione o Atendente *</option>
+                              {ATENDENTES.map((atendente) => (
+                                <option key={atendente} value={atendente}>{atendente}</option>
+                              ))}
+                            </select>
+                            <textarea
+                              rows="2"
+                              value={obsRapida}
+                              onChange={(e) => setObsRapida(e.target.value)}
+                              placeholder="Digite a nova observação..."
+                              className="w-full border border-gray-300 rounded p-1.5 text-xs bg-white text-gray-900 focus:outline-none resize-y"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setAdicionandoEmId(null)}
+                                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-medium"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => salvarAdicaoRapida(item._id)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs font-medium"
+                              >
+                                Salvar Comentário
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
                       
                       {/* Status */}
