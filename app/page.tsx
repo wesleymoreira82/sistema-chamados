@@ -21,7 +21,6 @@ const ATENDENTES = [
 ];
 
 const LINHA_STATUS_CORES = {
-  '': 'bg-white hover:bg-gray-50',
   'NOVO/REABERTO': 'bg-white hover:bg-gray-50',
   'EM ANÁLISE': 'bg-yellow-50/70 hover:bg-yellow-100/70',
   'REPASSADO': 'bg-blue-50/70 hover:bg-blue-100/70',
@@ -31,13 +30,12 @@ const LINHA_STATUS_CORES = {
 };
 
 const STATUS_CORES = {
-  '': 'bg-gray-100 text-gray-700 border-gray-300 font-bold',
-  'NOVO/REABERTO': 'bg-gray-100 text-gray-700 border-gray-300 font-bold',
-  'EM ANÁLISE': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  'REPASSADO': 'bg-blue-100 text-blue-800 border-blue-300',
-  'FINALIZADO': 'bg-green-100 text-green-800 border-green-300',
-  'RETOR. CLIEN': 'bg-purple-100 text-purple-800 border-purple-300',
-  'AGENDADO': 'bg-amber-800 text-white border-amber-900'
+  'NOVO/REABERTO': 'bg-gray-100 text-gray-800 border-gray-300 font-bold',
+  'EM ANÁLISE': 'bg-yellow-100 text-yellow-800 border-yellow-300 font-bold',
+  'REPASSADO': 'bg-blue-100 text-blue-800 border-blue-300 font-bold',
+  'FINALIZADO': 'bg-green-100 text-green-800 border-green-300 font-bold',
+  'RETOR. CLIEN': 'bg-purple-100 text-purple-800 border-purple-300 font-bold',
+  'AGENDADO': 'bg-amber-800 text-white border-amber-900 font-bold'
 };
 
 export default function Home() {
@@ -123,12 +121,12 @@ export default function Home() {
       if (resultado.success) {
         setForm({ nf: '', bling: '', ticket: '', pedido: '', atendente: '', obs: '', status: 'NOVO/REABERTO', resolucao: '' });
         carregarChamados();
-        alert('Chamado registrado com sucesso!');
+        alert('Chamado registado com sucesso!');
       } else if (resultado.duplicado) {
         setPedidoExistenteModal(resultado.data);
         setModoAtualizacao(true);
       } else {
-        alert('Erro ao registrar: ' + resultado.error);
+        alert('Erro ao registar: ' + resultado.error);
       }
     } catch (error) {
       console.error('Erro:', error);
@@ -139,7 +137,7 @@ export default function Home() {
 
   const handleAtualizarExistente = async () => {
     if (!atendenteAtualizador || !novaObservacao) {
-      alert('Selecione seu nome e digite a nova observação!');
+      alert('Selecione o seu nome e digite a nova observação!');
       return;
     }
 
@@ -258,7 +256,7 @@ export default function Home() {
   };
 
   const deletarChamado = async (id, pedido) => {
-    if (confirm(`Tem certeza que deseja excluir permanentemente o chamado do pedido ${pedido}?`)) {
+    if (confirm(`Tem a certeza que deseja excluir permanentemente o chamado do pedido ${pedido}?`)) {
       try {
         const res = await fetch(`/api/chamados?id=${id}`, { method: 'DELETE' });
         const resultado = await res.json();
@@ -274,6 +272,7 @@ export default function Home() {
   const chamadosFiltrados = chamados.filter((item) => {
     const termo = busca.toLowerCase();
     const stringTimeline = item.timeline?.map(t => `${t.atendente} ${t.obs} ${t.data}`).join(' ').toLowerCase() || '';
+    const statusItem = item.status || 'NOVO/REABERTO';
     
     return (
       item.pedido?.toLowerCase().includes(termo) ||
@@ -281,7 +280,7 @@ export default function Home() {
       item.bling?.toLowerCase().includes(termo) ||
       item.ticket?.toLowerCase().includes(termo) ||
       item.atendenteCriacao?.toLowerCase().includes(termo) ||
-      (item.status || 'NOVO/REABERTO').toLowerCase().includes(termo) ||
+      statusItem.toLowerCase().includes(termo) ||
       item.resolucao?.toLowerCase().includes(termo) ||
       stringTimeline.includes(termo)
     );
@@ -302,11 +301,11 @@ export default function Home() {
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="🔍 Buscar na planilha (pedido, ticket, obs...)"
+              placeholder="🔍 Pesquisar na planilha (pedido, ticket, obs...)"
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 w-72 focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
             <div className="text-sm font-medium bg-amber-50 text-amber-800 px-4 py-2 rounded-lg border border-amber-200 whitespace-nowrap">
-              Registros: {chamadosFiltrados.length}
+              Registos: {chamadosFiltrados.length}
             </div>
           </div>
         </div>
@@ -397,7 +396,7 @@ export default function Home() {
                 disabled={loading}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium p-2.5 rounded-lg text-sm transition-colors shadow-sm"
               >
-                {loading ? 'Salvando...' : 'Cadastrar Chamado'}
+                {loading ? 'A guardar...' : 'Registar Chamado'}
               </button>
             </div>
 
@@ -438,11 +437,14 @@ export default function Home() {
                   </tr>
                 ) : (
                   chamadosFiltrados.map((item) => {
-                    const statusAtual = item.status || 'NOVO/REABERTO';
+                    const statusAtual = item.status && item.status.trim() !== '' ? item.status : 'NOVO/REABERTO';
+                    const corLinha = LINHA_STATUS_CORES[statusAtual] || LINHA_STATUS_CORES['NOVO/REABERTO'];
+                    const corSelect = STATUS_CORES[statusAtual] || STATUS_CORES['NOVO/REABERTO'];
+
                     return (
                       <tr 
                         key={item._id} 
-                        className={`transition-colors align-top border-b border-gray-300 ${LINHA_STATUS_CORES[statusAtual] || LINHA_STATUS_CORES['NOVO/REABERTO']}`}
+                        className={`transition-colors align-top border-b border-gray-300 ${corLinha}`}
                       >
                         <td className="p-3 text-gray-800 font-medium text-xs whitespace-nowrap border-r border-gray-200/60">{item.dataCriacao || '-'}</td>
                         <td className="p-3 font-bold text-gray-900 whitespace-nowrap border-r border-gray-200/60">{item.pedido}</td>
@@ -597,7 +599,7 @@ export default function Home() {
                           <select
                             value={statusAtual}
                             onChange={(e) => atualizarCampo(item._id, { status: e.target.value })}
-                            className={`text-xs font-bold p-1.5 rounded-lg border ${STATUS_CORES[statusAtual] || STATUS_CORES['NOVO/REABERTO']} focus:outline-none`}
+                            className={`text-xs font-bold p-1.5 rounded-lg border ${corSelect} focus:outline-none`}
                           >
                             <option value="NOVO/REABERTO">NOVO/REABERTO</option>
                             <option value="EM ANÁLISE">EM ANÁLISE</option>
@@ -656,7 +658,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Pedido #{pedidoExistenteModal.pedido} Já Cadastrado!</h3>
+                <h3 className="text-lg font-bold text-gray-900">Pedido #{pedidoExistenteModal.pedido} Já Registado!</h3>
                 <p className="text-xs text-gray-500">Veja abaixo o histórico e gerencie este pedido:</p>
               </div>
             </div>
@@ -699,13 +701,13 @@ export default function Home() {
               <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <div className="text-xs font-bold text-gray-700 uppercase">Adicionar Nova Atualização / Contato:</div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">SEU NOME (ATENDENTE) *</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">O SEU NOME (ATENDENTE) *</label>
                   <select
                     value={atendenteAtualizador}
                     onChange={(e) => setAtendenteAtualizador(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
-                    <option value="">Selecione quem está atendendo agora</option>
+                    <option value="">Selecione quem está a atender agora</option>
                     {ATENDENTES.map((atendente) => (
                       <option key={atendente} value={atendente}>{atendente}</option>
                     ))}
