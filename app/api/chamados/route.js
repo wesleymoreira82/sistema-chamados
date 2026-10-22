@@ -15,15 +15,11 @@ export async function GET(request) {
 
     const chamados = await Chamado.find({});
     
-    // Nova regra de prioridade de ordenação:
-    // 1. EM ANÁLISE no topo
-    // 2. Sem status (em branco) em segundo
-    // 3. Demais status por último (ordenados por antiguidade)
     chamados.sort((a, b) => {
       const getPesoStatus = (status) => {
         if (status === 'EM ANÁLISE') return 1;
         if (!status || status === '') return 2;
-        return 3; // Demais status
+        return 3;
       };
 
       const pesoA = getPesoStatus(a.status);
@@ -33,7 +29,6 @@ export async function GET(request) {
         return pesoA - pesoB;
       }
 
-      // Se tiverem o mesmo peso, ordena do mais antigo para o mais novo (createdAt crescente)
       return new Date(a.createdAt) - new Date(b.createdAt);
     });
 
@@ -119,6 +114,7 @@ export async function PUT(request) {
       }
     }
 
+    // Se o status foi enviado na atualização rápida, atualiza ele também
     if (status !== undefined) chamado.status = status;
     if (nf !== undefined) chamado.nf = nf;
     if (bling !== undefined) chamado.bling = bling;
